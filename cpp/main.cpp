@@ -1,34 +1,6 @@
 #include <pcl/console/parse.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/grsd.h>
-#include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/segmentation/supervoxel_clustering.h>
-#include<pcl/visualization/pcl_plotter.h>
-
-//VTK include needed for drawing graph lines
-#include <vtkPolyLine.h>
-
-//OpenCV for histogram comparisions
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-
-#include<string>
-#include<fstream>
-#include<sstream>
-#include<vector>
 
 #include "bb_supervoxel_segmentor.hpp"
-
-// Types
-typedef pcl::PointXYZRGBA PointT;
-typedef pcl::PointCloud<PointT> PointCloudT;
-typedef pcl::PointNormal PointNT;
-typedef pcl::PointCloud<PointNT> PointNCloudT;
-typedef pcl::PointXYZL PointLT;
-typedef pcl::PointCloud<PointLT> PointLCloudT;
 
 int main (int argc, char ** argv){
     if (argc < 2){
@@ -36,7 +8,9 @@ int main (int argc, char ** argv){
                                 "-v <voxel resolution>\n-s <seed resolution>\n"
                                 "-c <color weight> \n-z <spatial weight> \n"
                                 "-n <normal_weight>\n"
-                                "-b <num color histogram bins per channel", argv[0]);
+                                "-b <num color histogram bins per channel\n"
+                                "-D DEBUG_FLAG 0/1\n"
+                                "-V VISUALIZE_FLAG 0/1\n", argv[0]);
         return (1);
     }
     float voxel_resolution = 0.8f;
@@ -75,7 +49,9 @@ int main (int argc, char ** argv){
 
 
     BBSupervoxelSegmentor bbss(argv[1]);
-    bbss.setParameters(voxel_resolution, seed_resolution, color_importance, spatial_importance,
+    bbss.SetParameters(voxel_resolution, seed_resolution, color_importance, spatial_importance,
                         normal_importance, rgb_histbins, DEBUG, VISUALIZE);
-    bbss.process_pointcloud();
+    bbss.ProcessPointCloud();
+
+    return (0);
 }
