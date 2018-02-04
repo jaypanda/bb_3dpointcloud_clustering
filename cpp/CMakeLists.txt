@@ -12,5 +12,5 @@ include_directories( ${OpenCV_INCLUDE_DIRS} )
 link_directories(${PCL_LIBRARY_DIRS})
 add_definitions(${PCL_DEFINITIONS})
 
-add_executable (supervoxel_segmentor supervoxel_segmentor.cpp)
-target_link_libraries (supervoxel_segmentor ${PCL_LIBRARIES} ${OpenCV_LIBS} )
+add_executable (bb_3dpointcloud_clustering main.cpp bb_supervoxel_segmentor.cpp)
+target_link_libraries (bb_3dpointcloud_clustering ${PCL_LIBRARIES} ${OpenCV_LIBS} )
