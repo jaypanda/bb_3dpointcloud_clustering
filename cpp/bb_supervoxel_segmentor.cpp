@@ -118,7 +118,7 @@ void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& 
         final_objclouds.push_back(curr_obj);
         final_centroids.push_back(supervoxel->centroid_);
 
-        // Move iterator forward to next label
+        // Move iterator forward to next label.
         label_itr = supervoxel_adjacency.upper_bound(supervoxel_label);
     }
 
