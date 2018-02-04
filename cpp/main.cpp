@@ -1,6 +1,10 @@
 /*
-    author: Jay (jaypanda16@gmail.com)
-    Performs clustering of 3D point cloud data of people on a Basketball/NBA court
+    @author Jay (jaypanda16@gmail.com)
+    @file   bb_supervoxel_segmentor.cpp
+    @date   2018/02/03
+    @version 0.1
+
+    @brief  Main program to run clustering of 3D point cloud data of people on a Basketball/NBA court
 */
 #include <pcl/console/parse.h>
 

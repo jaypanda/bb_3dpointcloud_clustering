@@ -1,10 +1,19 @@
 /*
-    author: Jay (jaypanda16@gmail.com)
-    - Uses Voxel Cloud Connectivity Segmentation (VCCS) which generates volumetric over-segmentations
-    of 3D point cloud data, known as supervoxels.
-    - The above step generates individual 3D point clouds for each person in scene.
-    - Now, the color histograms for each person point cloud as features in a k-means clustering
-    into 3 clusters corresponding to groups of people belonging to teamA, teamB and Referees
+    @author     Jay (jaypanda16@gmail.com)
+    @file       bb_supervoxel_segmentor.cpp
+    @date       2018/02/03
+    @version    0.1
+
+    @brief      3D person identification on basketball court using supervoxel segmentation followed
+                by k-means
+
+    @section    DESCRIPTION
+            - Uses Voxel Cloud Connectivity Segmentation (VCCS) which generates volumetric
+                over-segmentations of 3D point cloud data, known as supervoxels.
+            - The above step generates individual 3D point clouds for each person in scene.
+            - Now, the color histograms for each person point cloud as features in a k-means
+                clustering into 3 clusters corresponding to groups of people belonging to teamA,
+                teamB and Referees
 */
 #include "bb_supervoxel_segmentor.hpp"
 
@@ -43,7 +52,7 @@ bool BBSupervoxelSegmentor::LoadPointCloud(char* point_cloud_data_file) {
         try {
             fp >> currPoint.z >> currPoint.y;
             fp >> r >> g >> b;
-        }catch (int e) {
+        } catch (int e) {
             pcl::console::print_error("Error %d occurred\n", e);
             return false;
         }
