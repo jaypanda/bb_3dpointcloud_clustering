@@ -4,7 +4,8 @@
     @date       2018/02/03
     @version    0.1
 
-    @brief      3D person identification on basketball court using supervoxel segmentation followed by k-means
+    @brief      3D person identification on basketball court using supervoxel segmentation followed
+                by k-means.
 */
 #include <pcl/console/parse.h>
 #include <pcl/point_cloud.h>

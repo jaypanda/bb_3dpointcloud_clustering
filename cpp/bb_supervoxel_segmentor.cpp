@@ -5,7 +5,7 @@
     @version    0.1
 
     @brief      3D person identification on basketball court using supervoxel segmentation followed
-                by k-means
+                by k-means.
 
     @section    DESCRIPTION
             - Uses Voxel Cloud Connectivity Segmentation (VCCS) which generates volumetric
@@ -13,7 +13,7 @@
             - The above step generates individual 3D point clouds for each person in scene.
             - Now, the color histograms for each person point cloud as features in a k-means
                 clustering into 3 clusters corresponding to groups of people belonging to teamA,
-                teamB and Referees
+                teamB and Referees.
 */
 #include "bb_supervoxel_segmentor.hpp"
 
@@ -32,7 +32,6 @@ void BBSupervoxelSegmentor::SetParameters(float voxel_resolution, float seed_res
                             float spatial_importance, float normal_importance, int rgb_histbins,
                             bool DEBUG, bool VISUALIZE) {
     pcl::console::print_highlight("Setting config parameters...\n");
-
     voxel_resolution = voxel_resolution;
     seed_resolution = seed_resolution;
     color_importance = color_importance;
@@ -46,8 +45,8 @@ void BBSupervoxelSegmentor::SetParameters(float voxel_resolution, float seed_res
 bool BBSupervoxelSegmentor::LoadPointCloud(char* point_cloud_data_file) {
     ifstream fp(point_cloud_data_file);
     PointT currPoint;
-
     uint32_t r, g, b, a = 255;
+
     while (fp >> currPoint.x) {
         try {
             fp >> currPoint.z >> currPoint.y;
