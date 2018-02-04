@@ -1,9 +1,13 @@
+/*
+    author: Jay (jaypanda16@gmail.com)
+    Performs clustering of 3D point cloud data of people on a Basketball/NBA court
+*/
 #include <pcl/console/parse.h>
 
 #include "bb_supervoxel_segmentor.hpp"
 
-int main (int argc, char ** argv){
-    if (argc < 2){
+int main (int argc, char ** argv) {
+    if (argc < 2) {
         pcl::console::print_error ("Syntax is: %s <point-cloud-data-file> \n "
                                 "-v <voxel resolution>\n-s <seed resolution>\n"
                                 "-c <color weight> \n-z <spatial weight> \n"
@@ -36,17 +40,16 @@ int main (int argc, char ** argv){
         pcl::console::parse (argc, argv, "-n", normal_importance);
 
     int rgb_histbins = 10;
-    if (pcl::console::find_switch(argc, argv, "-b"))
+    if (pcl::console::find_switch (argc, argv, "-b"))
         pcl::console::parse(argc, argv, "-b", rgb_histbins);
 
     bool DEBUG = false;
-    if (pcl::console::find_switch(argc, argv, "-D"))
+    if (pcl::console::find_switch (argc, argv, "-D"))
         pcl::console::parse(argc, argv, "-D", DEBUG);
 
     bool VISUALIZE = true;
-    if (pcl::console::find_switch(argc, argv, "-V"))
+    if (pcl::console::find_switch (argc, argv, "-V"))
         pcl::console::parse(argc, argv, "-V", VISUALIZE);
-
 
     BBSupervoxelSegmentor bbss(argv[1]);
     bbss.SetParameters(voxel_resolution, seed_resolution, color_importance, spatial_importance,
