@@ -4,8 +4,8 @@ DESCRIPTION
 To cluster and group players/referees in 3d point clouds of a basketball game,
 in order to enable optical tracking, etc
 
-I. bb_supervoxel_segmentor
-The approach in "ProcessPointCloud" is broadly performing the following steps:
+I. bb_supervoxel_segmentor.cpp
+    The complete implemented approach in "ProcessPointCloud" is broadly performing the following steps:
 
 1) "SupervoxelClustering": This step is inspired from PCL tutorial on the Supervoxel Clustering
     approach (http://pointclouds.org/documentation/tutorials/supervoxel_clustering.php), based
@@ -22,6 +22,13 @@ The approach in "ProcessPointCloud" is broadly performing the following steps:
     referees, the visualization via PCLVisualizer, projects the original 3D point cloud on
     a white background and marks the centroid points of each person with a unique color voxel -
     Red, Green or Blue.
+
+II. py_cluster3d.py #Incomplete Script - initial trial
+    This was an attempt to use python based libraries and approach this problem. Eventually, due to
+lack of full support for PCL via python, and/or other supporting libraries, the complete approach
+was implemented with C++.
+   This script uses DBSCAN from scikit-learn, to perform the clustering of point clouds. It doesn't
+seem to perform very well, particularly with point clouds of people standing close to each other.
 
 -----------------
 DEPENDENCIES
