@@ -65,6 +65,7 @@ bool BBSupervoxelSegmentor::LoadPointCloud(char* point_cloud_data_file) {
 
 void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& final_objclouds,
                                                  std::vector<PointT>& final_centroids) {
+    // Initialize SupervoxelClustering object with voxel_resolution and seed_resolution
     pcl::SupervoxelClustering<PointT> super(voxel_resolution, seed_resolution);
     super.setUseSingleCameraTransform(false);
     super.setInputCloud(cloud);
@@ -79,7 +80,7 @@ void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& 
     if (DEBUG)
         pcl::console::print_info ("Found %d supervoxels\n", supervoxel_clusters.size ());
 
-    pcl::console::print_highlight ("Getting supervoxel adjacency\n");
+    pcl::console::print_highlight ("Getting supervoxel adjacency...\n");
     std::multimap<uint32_t, uint32_t> supervoxel_adjacency;
     super.getSupervoxelAdjacency (supervoxel_adjacency);
     // To make a graph of the supervoxel adjacency, we need to iterate through the supervoxel
@@ -88,7 +89,7 @@ void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& 
     std::map<uint32_t, bool> processed_clusters;
 
     for (; label_itr != supervoxel_adjacency.end();) {
-        // Gets the label and the
+        // Gets the label and the corresopnding supervoxel
         uint32_t supervoxel_label = label_itr->first;
         if( processed_clusters.find(supervoxel_label) != processed_clusters.end()) {
             label_itr = supervoxel_adjacency.upper_bound(supervoxel_label);
@@ -99,7 +100,7 @@ void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& 
         if (DEBUG)
             pcl::console::print_info("Supervoxel cluster: %d\n", supervoxel_label);
 
-        // Iterates through the adjacent supervoxels and make a point cloud of them.
+        // Iterates through the adjacent supervoxels and makes a point cloud of them.
         PointCloudT adjacent_supervoxel_centers;
         PointCloudT::Ptr curr_obj = supervoxel->voxels_;
         std::multimap<uint32_t,uint32_t>::iterator adjacent_itr = supervoxel_adjacency.equal_range(supervoxel_label).first;
@@ -127,6 +128,8 @@ void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& 
     for ( ; cluster_itr != supervoxel_clusters.end() ; ++cluster_itr) {
         if (processed_clusters.find(cluster_itr->first) == processed_clusters.end()) {
             // Naive thresholding based on size of point cloud to eliminate small/noisy objects/points.
+            // I found this threshold limit was sufficient to eliminate the basketball net and another noisy
+            // point cloud.
             if (cluster_itr->second->voxels_->size() < 25)
                 continue;
             // Add this point cloud - considered as a single object in the scene.
@@ -137,61 +140,60 @@ void BBSupervoxelSegmentor::SupervoxelClustering(std::vector<PointCloudT::Ptr>& 
 }
 
 void BBSupervoxelSegmentor::ColorHistClustering(std::vector<PointCloudT::Ptr> final_objclouds,
-                                                    std::vector<int>& labelvecs, int histSize) {
+                                                    std::vector<int>& labelvecs, int hist_size) {
     float range[] = { 0, 255 } ;
-    const float* histRange = { range };
+    const float* hist_range = { range };
     bool uniform = true;
     bool accumulate = false;
 
-    cv::Mat histfeatures = cv::Mat::zeros(final_objclouds.size(), histSize*3, CV_32FC1);
+    cv::Mat hist_features = cv::Mat::zeros(final_objclouds.size(), hist_size*3, CV_32FC1);
     for (int c = 0 ; c < final_objclouds.size() ; c++) {
         PointCloudT::Ptr cloud = final_objclouds[c];
         cv::Mat b_hist, g_hist, r_hist;
 
-        cv::Mat rvals = cv::Mat::zeros(cloud->size(), 1, CV_32FC1);
-        cv::Mat gvals = cv::Mat::zeros(cloud->size(), 1, CV_32FC1);
-        cv::Mat bvals = cv::Mat::zeros(cloud->size(), 1, CV_32FC1);
+        cv::Mat rvals = cv::Mat::zeros(1, cloud->size(), CV_32FC1);
+        cv::Mat gvals = cv::Mat::zeros(1, cloud->size(), CV_32FC1);
+        cv::Mat bvals = cv::Mat::zeros(1, cloud->size(), CV_32FC1);
 
         int i = 0;
+        // Iterate through points in the point cloud to get 1-D Mat arrays for R, G, B values
         for (PointCloudT::iterator pitr = cloud->begin()  ; pitr != cloud->end() ; ++pitr, ++i) {
             uint32_t rgbD = pitr->rgba;
             uint16_t rD = (rgbD >> 16) & 0x0000ff;
             uint16_t gD = (rgbD >> 8) & 0x0000ff;
             uint16_t bD = (rgbD) & 0x0000ff;
-            rvals.at<float>(i,0) = (float)rD;
-            gvals.at<float>(i,0) = (float)gD;
-            bvals.at<float>(i,0) = (float)bD;
+            rvals.at<float>(0,i) = (float)rD;
+            gvals.at<float>(0,i) = (float)gD;
+            bvals.at<float>(0,i) = (float)bD;
         }
-        cv::calcHist(&rvals, 1, 0, cv::Mat(), r_hist, 1, &histSize, &histRange, uniform, accumulate);
-        cv::calcHist(&gvals, 1, 0, cv::Mat(), g_hist, 1, &histSize, &histRange, uniform, accumulate);
-        cv::calcHist(&bvals, 1, 0, cv::Mat(), b_hist, 1, &histSize, &histRange, uniform, accumulate);
 
-        // Normalize the result to [ 0, 20]
+        // Compute individual R,G,B histograms using OpenCV calcHist.
+        cv::calcHist(&rvals, 1, 0, cv::Mat(), r_hist, 1, &hist_size, &hist_range, uniform, accumulate);
+        cv::calcHist(&gvals, 1, 0, cv::Mat(), g_hist, 1, &hist_size, &hist_range, uniform, accumulate);
+        cv::calcHist(&bvals, 1, 0, cv::Mat(), b_hist, 1, &hist_size, &hist_range, uniform, accumulate);
+
+        // Normalize the result to [ 0, 1].
         cv::normalize(b_hist, b_hist, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
         cv::normalize(g_hist, g_hist, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
         cv::normalize(r_hist, r_hist, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
 
-        for (int j = 0 ; j < r_hist.rows ; j++) {
-            histfeatures.at<float>(c,j) = r_hist.at<float>(j,0);
-            if(DEBUG)
-                pcl::console::print_info("%.4f ", r_hist.at<float>(j,0));
-        }
-        for (int j = 0 ; j < g_hist.rows ; j++) {
-            histfeatures.at<float>(c,j+histSize) = g_hist.at<float>(j,0);
-            if(DEBUG)
-                pcl::console::print_info("%.4f ", g_hist.at<float>(j,0));
-        }
-        for (int j = 0 ; j < b_hist.rows ; j++) {
-            histfeatures.at<float>(c,j+2*histSize) = b_hist.at<float>(j,0);
-            if(DEBUG)
-                pcl::console::print_info("%.4f ", b_hist.at<float>(j,0));
-        }
+        // Concatenate the R-G-B histograms to form a single feature vector for each point cloud.
+        // Update the corresponding row in hist_features Mat object for the same.
+        size_t offset = 0;
+        r_hist = r_hist.t();
+        r_hist.copyTo(hist_features.row(c).colRange(offset, offset+hist_size));
+        offset += hist_size;
+        g_hist = g_hist.t();
+        g_hist.copyTo(hist_features.row(c).colRange(offset, offset+hist_size));
+        offset += hist_size;
+        b_hist = b_hist.t();
+        b_hist.row(0).copyTo(hist_features.row(c).colRange(offset, offset+hist_size));
     }
 
     // Cluster with k-means for 3 groups (teamA, teamB and Referees).
     cv::Mat labels, centers;
     int attempts = 5;
-    cv::kmeans (histfeatures, 3, labels,
+    cv::kmeans (hist_features, 3, labels,
         cv::TermCriteria(CV_TERMCRIT_ITER|CV_TERMCRIT_EPS, 10000, 0.0001),
         attempts, cv::KMEANS_PP_CENTERS, centers);
     for (int i = 0 ; i < labels.rows ; i++ ) {
@@ -208,7 +210,7 @@ bool BBSupervoxelSegmentor::ProcessPointCloud() {
     }
     pcl::console::print_highlight("Processing starts...\n");
 
-    // Person clouds and their centroid points as lists: [PointCloudT] & [PointXYZRGBA]
+    // Person point clouds and their centroid points as lists: [PointCloudT] & [PointXYZRGBA]
     std::vector<PointCloudT::Ptr> final_objclouds;
     std::vector<PointT> final_centroids;
     obj_centroids = boost::shared_ptr <PointCloudT> (new PointCloudT());
@@ -261,13 +263,13 @@ bool BBSupervoxelSegmentor::ProcessPointCloud() {
 
         // Visualize  RGB colored point cloud for each identified object i.e. individual cluster.
         if (VISUALIZE) {
-            std::stringstream objid;
-            objid << "P_" << i+1 ;
+            std::stringstream obj_id;
+            obj_id << "P_" << i+1 ;
             pcl::visualization::PointCloudColorHandlerRGBField<PointT> rgba(final_objclouds[i]);
             viewer->setBackgroundColor(255,255,255);
-            viewer->addPointCloud<PointT> (final_objclouds[i], rgba, objid.str());
-            viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY,0.8, objid.str());
-            viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, objid.str());
+            viewer->addPointCloud<PointT> (final_objclouds[i], rgba, obj_id.str());
+            viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY,0.8, obj_id.str());
+            viewer->setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 3, obj_id.str());
         }
     }
 
